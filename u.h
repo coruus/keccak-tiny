@@ -8,6 +8,8 @@
 #define SI static INLINE
 #define SIV SI void
 #define SIE SI int
+#define F2 int
+#define FN SIV
 
 typedef unsigned char byte;
 typedef unsigned char* bytes;
@@ -22,7 +24,7 @@ typedef unsigned long long u8;
     _(for (size i = 0; i < L; i += ST) { S; })
 
 #define mkapply(NAME, S)                     \
-    SIV NAME(bytes dst, bytes src, size len) \
+    FN NAME(bytes dst, bytes src, size len) \
     {                                        \
         FOR(i, 1, len, S);                   \
     }

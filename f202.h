@@ -4,13 +4,13 @@
 #include "u.h"
 
 #define decshake(bits) \
-    int shake##bits(bytes, size, bytes, size);
+    F2 shake##bits(bytes, size, bytes, size);
 
 decshake(128)
 decshake(256)
 
 #define decsha3(bits) \
-    int sha3_##bits(bytes, size, bytes, size);
+    F2 sha3_##bits(bytes, size, bytes, size);
 
 decsha3(224)
 decsha3(256)
