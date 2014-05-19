@@ -11,5 +11,5 @@ for length, md in grouper(2, lines):
     length = int(length)
     if length % 8 != 0:
         continue
-    with open('{}/{}'.format(sys.argv[1].split('.')[0], length), 'wb') as f:
+    with open('answers/{}/{}'.format(sys.argv[1].split('.')[0], length), 'wb') as f:
         f.write(md.lower())
