@@ -8,12 +8,10 @@
 SIV clear(bytes a) { FOR(i, 1, 200, a[i] = 0); }
 
 mkapply(xorin, dst[i] ^= src[i])
-//helper(xorout,src[i] ^= dst[i])
-//helper(xorinout, dst[i] ^= src[i]; src[i] = dst[i])
 mkapply(setout, src[i] = dst[i])
 
 SIE hash(bytes out, size outlen, bytes in, size inlen, size rate, byte delim) {
-  if ((out == NULL) || (in == NULL) || (rate >= Plen)) {
+  if ((out == NULL) || ((in == NULL) && inlen != 0) || (rate >= Plen)) {
     return -1;
   }
   byte a[Plen] = {0};
