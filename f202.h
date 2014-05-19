@@ -1,5 +1,6 @@
 #ifndef F202_H
 #define F202_H
+#include "k.h"
 #include "u.h"
 
 #define decshake(bits) \
@@ -16,15 +17,7 @@ decsha3(256)
 decsha3(384)
 decsha3(512)
 
-#define _(S) \
-    do {     \
-        S    \
-    } while (0)
-#define FOR(i, ST, L, S) \
-    _(for (size i = 0; i < L; i += ST) { S; })
-
-    // Can substitute an arbitrary permutation for Keccak-f.
-    extern void keccakf(void*);
+// Can substitute an arbitrary permutation for Keccak-f.
 #define P keccakf
 #define Plen 200
 
@@ -35,12 +28,6 @@ decsha3(512)
         P(a);           \
         I += rate;      \
         L -= rate;      \
-    }
-
-#define helper(NAME, S)                      \
-    SIV NAME(bytes dst, bytes src, size len) \
-    {                                        \
-        FOR(i, 1, len, S);                   \
     }
 
 #endif // F202_H

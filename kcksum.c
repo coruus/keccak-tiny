@@ -1,3 +1,5 @@
+#include "f202.h"
+
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -24,11 +26,6 @@
       goto LABEL;                             \
     }                                         \
   } while (0)
-
-#define BITS 256
-#define BYTES (BITS/8)
-#define SHAFN sha3_256
-extern int SHAFN(uint8_t*, size_t, uint8_t*, size_t);
 
 int main(int argc, char** argv) {
   if (argc < 2) {
@@ -69,13 +66,12 @@ int main(int argc, char** argv) {
     E(close_file, "mmap failed");
   }
 
-  uint8_t out[BITS/8] = {0};
+  uint8_t out[OBYTES] = {0};
   fprintf(stderr, "..\n");
-  err = SHAFN(out, BYTES, in, length);
-  //err = vof(out, 32, in, length, 16);
+  err = SHAFN(out, OBYTES, in, length);
 
-  printf("SHA3-%u('%s') = ", BITS, argv[1]);
-  for (size_t i = 0; i < BYTES; i++) {
+  printf("%s('%s') = ", NAME, argv[1]);
+  for (size_t i = 0; i < OBYTES; i++) {
     printf("%02x", out[i]);
   }
   printf("\n");
