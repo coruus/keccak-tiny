@@ -9,7 +9,7 @@ build $b/kck256sum: cexec_optim f202.c kck.c kcksum.c
   defs = -DSHAFN=sha3_256 -DOBYTES=32 -D'NAME="SHA3-256"' -DVERBOSE
 
 build $b/sha3_224sum: cexec f202.c kck.c kcksum.c
-  defs = -DSHAFN=sha3_256 -DOBYTES=28 -D'NAME="SHA3-224"'
+  defs = -DSHAFN=sha3_224 -DOBYTES=28 -D'NAME="SHA3-224"'
 build $b/sha3_256sum: cexec f202.c kck.c kcksum.c
   defs = -DSHAFN=sha3_256 -DOBYTES=32 -D'NAME="SHA3-256"'
 build $b/sha3_384sum: cexec f202.c kck.c kcksum.c
