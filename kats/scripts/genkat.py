@@ -12,4 +12,4 @@ for length, md in grouper(2, lines):
     if length % 8 != 0:
         continue
     with open('{}/{}'.format(sys.argv[1].split('.')[0], length), 'wb') as f:
-        f.write(md)
+        f.write(md.lower())
