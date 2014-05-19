@@ -1,0 +1,34 @@
+# Definitions for C compiler
+c11annex = -D__STDC_WANT_LIB_EXT1__=1
+# -D__STDC_WANT_LIB_EXT2__=1
+cstandard = -std=c11 $c11annex
+cnoannoying = -Wno-error=padded -Wno-error=documentation -Wno-sign-conversion
+cwarnings = -Wall -Weverything -Wextra -Wpedantic -pedantic -fcolor-diagnostics $cnoannoying
+csanitize = -fsanitize=local-bounds -fsanitize=address-full -fsanitize=undefined
+csanextra = -fsanitize=alignment -fsanitize=bool -fsanitize=bounds -fsanitize=enum $
+            -fsanitize=float-cast-overflow -fsanitize=float-divide-by-zero $
+            -fsanitize=null -fsanitize=object-size -fsanitize=return -fsanitize=shift $
+            -fsanitize=signed-integer-overflow -fsanitize=unreachable -fsanitize=vla-bound
+# Memory sanitize only supported on Linux at present...
+csanmem = -fsanitize=memory -fsanitize-memory-track-origins=2
+# Warns on unsigned overflow; useful to check occasionally, but is too annoying to enable
+# always.
+cannoying = -fsanitize=integer
+csafety = -fstack-protector-all
+carch = -march=native
+coptim = -O3 $carch -fvectorize -fslp-vectorize -funroll-loops -freroll-loops -fslp-vectorize-aggressive
+cdebug = -g -O0
+
+cflags = $cdebug $cstandard $cwarnings $carch $csanitize $csafety $csanextra
+cflags_optim = $cstandard $cwarnings $coptim
+depsflag = -MMD -MF
+
+rule cexec
+  deps = gcc
+  depfile = $out.d
+  command = $cc $depsflag $out.d $cflags $defs $in -o $out
+
+rule cexec_optim
+  deps = gcc
+  depfile = $out.d
+  command = $cc $depsflag $out.d $cflags_optim $defs $in -o $out
