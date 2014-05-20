@@ -28,6 +28,8 @@
 
 #define nthreads 4
 
+static mtx_t iomtx;
+
 void h(void* v);
 void h(void* v) {
   char* fn = (char*)v;
@@ -51,9 +53,11 @@ void h(void* v) {
   SHAFN(out, OBYTES, in, length);
   length && munmap(in, length);
 
+  mtx_lock(&iomtx);
   verbose("%s('%s') = ", NAME, fn);
   FOR(i, 1, OBYTES, printf("%02x", out[i]));
   verbose("\n");
+  mtx_unlock(&iomtx);
 
 close:
   close(fd);
@@ -64,6 +68,8 @@ ret:
 
 int main(int argc, char** argv) {
   int err = 0;
+
+  mtx_init(&iomtx, mtx_plain);
 
   thrd_t t[nthreads];
   int res[nthreads];
