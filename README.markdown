@@ -4,6 +4,10 @@ An implementation of Keccak, SHA-3, and SHAKE in 135 cloc.
 
 A small (POSIX-only) sha3sum utility in 50 more.
 
+(And add C11 threads for another 20.)
+
+Who said Keccak was complicated? Seriously, please stop using SHA1.
+
 ## Building
 
     > ninja
@@ -23,7 +27,9 @@ Programs compiled with optimization:
 
    - *kck128sum*: SHAKE128 with 32 bytes of output
    - *kck256sum*: SHAKE256 with 64 bytes of output
-   - *kck512sum*: SHA3_512 with 64 bytes of output
+
+These SHAKE instances offer, respectively, uniform 128- and 256-bit
+security strengths against all attacks.
 
 Programs compiled with ASan and UBSan:
 
@@ -36,7 +42,7 @@ Programs compiled with ASan and UBSan:
 
 ## Endorsed by
 
-Nobody.
+Nobody. Well, except for me.
 
 ## License
 

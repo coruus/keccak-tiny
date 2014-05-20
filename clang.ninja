@@ -16,7 +16,7 @@ csanmem = -fsanitize=memory -fsanitize-memory-track-origins=2
 cannoying = -fsanitize=integer
 csafety = -fstack-protector-all
 carch = -march=native
-coptim = -O3 $carch -fvectorize -fslp-vectorize -funroll-loops -freroll-loops -fslp-vectorize-aggressive
+coptim = -O3 $carch -fvectorize -fslp-vectorize -fslp-vectorize-aggressive
 cdebug = -g
 
 cflags = $cdebug $cstandard $cwarnings $carch $csanitize $csafety $csanextra
