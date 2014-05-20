@@ -14,10 +14,10 @@ Main project site: https://github.com/jtsiomb/c11threads
  * just delete that bit if you don't care about timed mutexes
  */
 
-#ifndef C11THREADS_H_
-#define C11THREADS_H_
-
+#ifndef C11THREADS_H
+#define C11THREADS_H
 #include <time.h>
+
 #include <errno.h>
 #include <pthread.h>
 #include <sched.h> /* for sched_yield */
@@ -72,7 +72,7 @@ static inline int thrd_join(thrd_t thr, int* res) {
     return thrd_error;
   }
   if (res) {
-    *res = (long)retval;
+    *res = (int)retval;
   }
   return thrd_success;
 }
@@ -246,4 +246,4 @@ static inline int xtime_get(xtime* xt, int base) {
   return base;
 }
 
-#endif /* C11THREADS_H_ */
+#endif /* C11THREADS_H */
