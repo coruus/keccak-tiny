@@ -11,6 +11,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+//#include <threads.h>
+
 #define E(LABEL, MSG)                         \
   _(if (err != 0) {                           \
       strerror_r(err, serr, 1024);            \
@@ -24,18 +26,13 @@
 #define verbose(...)
 #endif
 
-int main(int argc, char** argv) {
-  if (argc < 2) {
-    fprintf(stderr, "filename required");
-    return -1;
-  }
+int h(char* fn);
+int h(char* fn) {
   int err = 0;
   char serr[1024] = {0};
+  fprintf(stderr, "hashing '%s', ", fn);
 
-
-  fprintf(stderr, "hashing '%s', ", argv[1]);
-
-  int fd = open(argv[1], O_RDONLY | O_NONBLOCK | O_NOCTTY);
+  int fd = open(fn, O_RDONLY | O_NONBLOCK | O_NOCTTY);
   err = !fd;
   E(ret, "couldn't open");
 
@@ -53,7 +50,7 @@ int main(int argc, char** argv) {
   SHAFN(out, OBYTES, in, length);
   length && munmap(in, length);
 
-  verbose("%s('%s') = ", NAME, argv[1]);
+  verbose("%s('%s') = ", NAME, fn);
   FOR(i, 1, OBYTES, printf("%02x", out[i]));
   verbose("\n");
 
@@ -61,5 +58,14 @@ close:
   close(fd);
 
 ret:
+  return err;
+}
+
+int main(int argc, char** argv) {
+  int err = 0;
+
+  for (int i = 1; i < argc; i++) {
+    err |= h(argv[i]);
+  }
   return err;
 }

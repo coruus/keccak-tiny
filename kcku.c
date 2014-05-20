@@ -22,7 +22,7 @@
 void keccakf(void* state) {
   uint64_t* a = (uint64_t*)state;
   uint64_t b[5] = {0};
-  uint64_t c, t = 0;
+  uint64_t t = 0;
   uint8_t x, y, i = 0;
 
   R24(
