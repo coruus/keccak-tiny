@@ -1,8 +1,8 @@
 # kcksum
 
-An implementation of Keccak, SHA-3, and SHAKE in 130 cloc.
+An implementation of Keccak, SHA-3, and SHAKE in 135 cloc.
 
-A small POSIX-only sha3sum utility in 50 more.
+A small (POSIX-only) sha3sum utility in 50 more.
 
 Who said Keccak was complicated? And really, please stop using SHA1.
 
