@@ -11,12 +11,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-//#include <threads.h>
+#include "threads.h"
 
 #define E(LABEL, MSG)                         \
   _(if (err != 0) {                           \
       strerror_r(err, serr, 1024);            \
-      fprintf(stderr, "%s: %s\n", serr, MSG); \
+      fprintf(stderr, "%s: %s: %s\n", fn, serr, MSG); \
       goto LABEL;                             \
     })
 
@@ -26,11 +26,13 @@
 #define verbose(...)
 #endif
 
-int h(char* fn);
-int h(char* fn) {
+#define nthreads 4
+
+void h(void* v);
+void h(void* v) {
+  char* fn = (char*)v;
   int err = 0;
   char serr[1024] = {0};
-  fprintf(stderr, "hashing '%s', ", fn);
 
   int fd = open(fn, O_RDONLY | O_NONBLOCK | O_NOCTTY);
   err = !fd;
@@ -41,7 +43,6 @@ int h(char* fn) {
   E(close, "couldn't fstat");
 
   size_t length = (size_t)stat.st_size;
-  fprintf(stderr, "length=%zu..\n", length);
 
   uint8_t* in = length ? mmap(0, length, PROT_READ, MAP_SHARED, fd, 0) : NULL;
   if (length && (in == MAP_FAILED)) { E(close, "mmap failed"); }
@@ -58,14 +59,25 @@ close:
   close(fd);
 
 ret:
-  return err;
+  thrd_exit(err);
 }
 
 int main(int argc, char** argv) {
   int err = 0;
 
-  for (int i = 1; i < argc; i++) {
-    err |= h(argv[i]);
+  thrd_t t[nthreads];
+  int res[nthreads];
+  int i, j, k;
+  for (i = 1; i < argc; i += nthreads) {
+    for (j = 0; j < nthreads; j++) {
+        if ((j+i) == argc) { goto join; }
+        thrd_create(t + j, h, argv[i + j]);
+     }
+join:
+    for (k = 0; k < j; k++) {
+      err |= thrd_join(t[k], res + k);
+      err |= res[k];
+    }
   }
   return err;
 }

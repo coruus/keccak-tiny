@@ -17,11 +17,16 @@ cannoying = -fsanitize=integer
 csafety = -fstack-protector-all
 carch = -march=native
 coptim = -O3 $carch -fvectorize -fslp-vectorize -funroll-loops -freroll-loops -fslp-vectorize-aggressive
-cdebug = -g -O0
+cdebug = -g
 
 cflags = $cdebug $cstandard $cwarnings $carch $csanitize $csafety $csanextra
 cflags_optim = $cstandard $cwarnings $coptim
 depsflag = -MMD -MF
+
+rule c
+  deps = gcc
+  depfile = $out.d
+  command = $cc $depsflag $out.d $cflags $defs $in -c -o $out
 
 rule cexec
   deps = gcc

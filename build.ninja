@@ -5,22 +5,44 @@ b = build
 
 cflags = $cflags -D'INLINE=__attribute__((always_inline))'
 
-build $b/kck128sum: cexec_optim f202.c kcku.c kcksum_threads.c
-  defs = -DSHAFN=shake128 -DOBYTES=32 -D'NAME="SHAKE128"' $v
-build $b/kck256sum: cexec_optim f202.c kcku.c kcksum_threads.c
-  defs = -DSHAFN=shake256 -DOBYTES=64 -D'NAME="SHAKE256"' $v
-build $b/kck512sum: cexec_optim f202.c kcku.c kcksum_threads.c
-  defs = -DSHAFN=sha3_512 -DOBYTES=64 -D'NAME="SHA3-512"' $v
+#build $b/kck128sum: cexec_optim f202.c kcku.c kcksum_threads.c
+#  defs = -DSHAFN=shake128 -DOBYTES=32 -D'NAME="SHAKE128"' $v
+#build $b/kck256sum: cexec_optim f202.c kcku.c kcksum_threads.c
+#  defs = -DSHAFN=shake256 -DOBYTES=64 -D'NAME="SHAKE256"' $v
+#build $b/kck512sum: cexec_optim f202.c kcku.c kcksum_threads.c
+#  defs = -DSHAFN=sha3_512 -DOBYTES=64 -D'NAME="SHA3-512"' $v
 
-build $b/sha3_224sum: cexec f202.c kcku.c kcksum_threads.c
+#build $b/sha3_224sum: cexec f202.c kcku.c kcksum_threads.c
+#  defs = -DSHAFN=sha3_224 -DOBYTES=28 -D'NAME="SHA3-224"'
+#build $b/sha3_256sum: cexec f202.c kcku.c kcksum_threads.c
+#  defs = -DSHAFN=sha3_256 -DOBYTES=32 -D'NAME="SHA3-256"'
+#build $b/sha3_384sum: cexec f202.c kcku.c kcksum_threads.c
+#  defs = -DSHAFN=sha3_384 -DOBYTES=48 -D'NAME="SHA3-384"'
+#build $b/sha3_512sum: cexec f202.c kcku.c kcksum_threads.c
+#  defs = -DSHAFN=sha3_512 -DOBYTES=64 -D'NAME="SHA3-512"'
+#build $b/shake128sum: cexec f202.c kcku.c kcksum_threads.c
+#  defs = -DSHAFN=shake128 -DOBYTES=512 -D'NAME="SHAKE128"'
+#build $b/shake256sum: cexec f202.c kcku.c kcksum_threads.c
+#  defs = -DSHAFN=shake256 -DOBYTES=512 -D'NAME="SHAKE256"'
+
+build $b/kck.o: c tweet2.c
+  cflags = $cflags -O3
+build $b/sha3_224sum.o: c kcksum_threads.c
   defs = -DSHAFN=sha3_224 -DOBYTES=28 -D'NAME="SHA3-224"'
-build $b/sha3_256sum: cexec f202.c kcku.c kcksum_threads.c
+build $b/sha3_256sum.o: c kcksum_threads.c
   defs = -DSHAFN=sha3_256 -DOBYTES=32 -D'NAME="SHA3-256"'
-build $b/sha3_384sum: cexec f202.c kcku.c kcksum_threads.c
+build $b/sha3_384sum.o: c kcksum_threads.c
   defs = -DSHAFN=sha3_384 -DOBYTES=48 -D'NAME="SHA3-384"'
-build $b/sha3_512sum: cexec f202.c kcku.c kcksum_threads.c
+build $b/sha3_512sum.o: c kcksum_threads.c
   defs = -DSHAFN=sha3_512 -DOBYTES=64 -D'NAME="SHA3-512"'
-build $b/shake128sum: cexec f202.c kcku.c kcksum_threads.c
+build $b/shake128sum.o: c kcksum_threads.c
   defs = -DSHAFN=shake128 -DOBYTES=512 -D'NAME="SHAKE128"'
-build $b/shake256sum: cexec f202.c kcku.c kcksum_threads.c
+build $b/shake256sum.o: c kcksum_threads.c
   defs = -DSHAFN=shake256 -DOBYTES=512 -D'NAME="SHAKE256"'
+
+build $b/sha3_224sum: cexec $b/sha3_224sum.o $b/kck.o
+build $b/sha3_256sum: cexec $b/sha3_256sum.o $b/kck.o
+build $b/sha3_384sum: cexec $b/sha3_384sum.o $b/kck.o
+build $b/sha3_512sum: cexec $b/sha3_512sum.o $b/kck.o
+build $b/shake128sum: cexec $b/shake128sum.o $b/kck.o
+build $b/shake256sum: cexec $b/shake256sum.o $b/kck.o

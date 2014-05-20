@@ -1,0 +1,10 @@
+language: c
+compiler:
+  - clang
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get -y ninja
+before_script:
+  - ninja
+script:
+  - ./scripts/test.sh
