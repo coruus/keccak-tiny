@@ -1,5 +1,5 @@
-#include "k.h"
 #include "f202.h"
+#include "k.h"
 #include "u.h"
 
 #include <stdint.h>
@@ -10,7 +10,7 @@ FN clear(bytes a) { FOR(i, 1, 200, a[i] = 0); }
 mkapply(xorin, dst[i] ^= src[i])
 mkapply(setout, src[i] = dst[i])
 
-SIE hash(bytes out, size outlen, bytes in, size inlen, size rate, byte delim) {
+F2 hash(bytes out, size outlen, bytes in, size inlen, size rate, byte delim) {
   if ((out == NULL) || ((in == NULL) && inlen != 0) || (rate >= Plen)) {
     return -1;
   }
@@ -32,7 +32,7 @@ SIE hash(bytes out, size outlen, bytes in, size inlen, size rate, byte delim) {
 }
 
 #define defshake(bits)                                            \
-  F2 shake##bits(bytes out, size outlen, bytes in, size inlen) { \
+  F2 shake##bits(bytes out, size outlen, bytes in, size inlen) {  \
     return hash(out, outlen, in, inlen, 200 - (bits / 4), 0x1f);  \
   }
 
@@ -42,7 +42,7 @@ defshake(256)
 #define defsha3(bits)                                            \
   F2 sha3_##bits(bytes out, size outlen, bytes in, size inlen) { \
     /*if (outlen != (bits/8)) { return -1; } */\
-    return hash(out, outlen, in, inlen, 200 - (bits / 4), 0x06);  \
+    return hash(out, outlen, in, inlen, 200 - (bits / 4), 0x06); \
   }
 
 defsha3(224)
