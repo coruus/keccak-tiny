@@ -5,15 +5,10 @@ I place this piece of code in the public domain. Feel free to use as you see
 fit. I'd appreciate it if you keep my name at the top of the code somehwere,
 but whatever.
 
-Modifications by David Leon Gil <coruus@gmail.com> released under CC0.
-
 Main project site: https://github.com/jtsiomb/c11threads
+
+Evisceration by David Leon Gil <coruus@gmail.com> released under CC0.
 */
-
-/* TODO: port to MacOSX: no timed mutexes under macosx...
- * just delete that bit if you don't care about timed mutexes
- */
-
 #ifndef C11THREADS_H
 #define C11THREADS_H
 #include <time.h>
@@ -25,13 +20,6 @@ Main project site: https://github.com/jtsiomb/c11threads
 
 #define ONCE_FLAG_INIT PTHREAD_ONCE_INIT
 
-#if defined(__APPLE__)
-#define HAS_TIMED_MUTEX 0
-#define PTHREAD_MUTEX_TIMED_NP PTHREAD_MUTEX_DEFAULT
-#else
-#define HAS_TIMED_MUTEX 1
-#endif
-
 /* types */
 typedef pthread_t thrd_t;
 typedef pthread_mutex_t mtx_t;
@@ -42,11 +30,6 @@ typedef pthread_once_t once_flag;
 typedef void (*thrd_start_t)(void*);
 typedef void (*tss_dtor_t)(void*);
 
-typedef struct {
-  time_t sec;
-  long nsec;
-} xtime;
-
 enum { mtx_plain = 0, mtx_recursive = 1, mtx_timed = 2, mtx_try = 4 };
 
 enum { thrd_success, thrd_busy, thrd_error, thrd_nomem };
@@ -54,9 +37,6 @@ enum { thrd_success, thrd_busy, thrd_error, thrd_nomem };
 /* ---- thread management ---- */
 
 static inline int thrd_create(thrd_t* thr, thrd_start_t func, void* arg) {
-  /* XXX there's a third possible value returned according to the standard:
-   * thrd_nomem. but it doesn't seem to correspond to any pthread_create errors.
-   */
   return pthread_create(thr, 0, (void* (*)(void*))func, arg) == 0 ? thrd_success
                                                                   : thrd_error;
 }
@@ -89,19 +69,6 @@ static inline int thrd_equal(thrd_t a, thrd_t b) {
   return pthread_equal(a, b);
 }
 
-static inline void thrd_sleep(const xtime* xt) {
-  int res;
-  struct timespec ts;
-  ts.tv_sec = (long)xt->sec;
-  ts.tv_nsec = xt->nsec;
-
-  do {
-    struct timespec rem;
-    res = nanosleep(&ts, &rem);
-    ts = rem;
-  } while (res == -1 && errno == EINTR);
-}
-
 static inline void thrd_yield(void) {
   sched_yield();
 }
@@ -109,30 +76,7 @@ static inline void thrd_yield(void) {
 /* ---- mutexes ---- */
 
 static inline int mtx_init(mtx_t* mtx, int type) {
-  if ((type & mtx_timed) & !HAS_TIMED_MUTEX) {
-    // Fail immediately if there's no timed mutex support.
-    return thrd_error;
-  }
-
-  int res;
-  pthread_mutexattr_t attr;
-
-  pthread_mutexattr_init(&attr);
-
-  /* XXX I don't think these are exactly correct semantics */
-  if (type & mtx_try) {
-    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_NORMAL);
-  }
-  if (type & mtx_timed) {
-    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_TIMED_NP);
-  }
-  if (type & mtx_recursive) {
-    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-  }
-
-  res = pthread_mutex_init(mtx, &attr) == 0 ? thrd_success : thrd_error;
-  pthread_mutexattr_destroy(&attr);
-  return res;
+  return pthread_mutex_init(mtx, NULL) == 0 ? thrd_success : thrd_error;
 }
 
 static inline void mtx_destroy(mtx_t* mtx) {
@@ -179,19 +123,6 @@ static inline int cnd_broadcast(cnd_t* cond) {
 
 static inline int cnd_wait(cnd_t* cond, mtx_t* mtx) {
   return pthread_cond_wait(cond, mtx) == 0 ? thrd_success : thrd_error;
-}
-
-static inline int cnd_timedwait(cnd_t* cond, mtx_t* mtx, const xtime* xt) {
-  int res;
-  struct timespec ts;
-
-  ts.tv_sec = (long)xt->sec;
-  ts.tv_nsec = xt->nsec;
-
-  if ((res = pthread_cond_timedwait(cond, mtx, &ts)) != 0) {
-    return res == ETIMEDOUT ? thrd_busy : thrd_error;
-  }
-  return thrd_success;
 }
 
 /* ---- thread-specific data ---- */

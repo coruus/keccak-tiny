@@ -16,7 +16,7 @@
 #define E(LABEL, MSG)                         \
   _(if (err != 0) {                           \
       strerror_r(err, serr, 1024);            \
-      fprintf(stderr, "%s: %s: %s\n", fn, serr, MSG); \
+      fprintf(stderr, "%s: '%s' %s\n", serr, fn, MSG); \
       goto LABEL;                             \
     })
 
@@ -38,16 +38,18 @@ void h(void* v) {
 
   int fd = open(fn, O_RDONLY | O_NONBLOCK | O_NOCTTY);
   err = !fd;
-  E(ret, "couldn't open");
+  E(ret, "couldn't be opened.");
 
   struct stat stat;
   err = fstat(fd, &stat);
-  E(close, "couldn't fstat");
+  E(close, "doesn't exist.");
+  err = !!(stat.st_mode & S_IFDIR);
+  E(close, "not a regular file.");
 
   size_t length = (size_t)stat.st_size;
 
   uint8_t* in = length ? mmap(0, length, PROT_READ, MAP_SHARED, fd, 0) : NULL;
-  if (length && (in == MAP_FAILED)) { E(close, "mmap failed"); }
+  if (length && (in == MAP_FAILED)) { E(close, "mmap-ing failed."); }
 
   uint8_t out[OBYTES] = {0};
   SHAFN(out, OBYTES, in, length);

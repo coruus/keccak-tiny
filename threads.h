@@ -1,1 +1,1 @@
-ext/c11threads/c11threads.h
+ext/c11threads/c11threads-tiny.h
