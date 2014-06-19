@@ -11,12 +11,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define E(LABEL, MSG)                         \
-  _(if (err != 0) {                           \
-      strerror_r(err, serr, 1024);            \
-      fprintf(stderr, "%s: %s\n", serr, MSG); \
-      goto LABEL;                             \
-    })
+#define E(LABEL, MSG)                       \
+  _(if (err != 0) {                         \
+    strerror_r(err, serr, 1024);            \
+    fprintf(stderr, "%s: %s\n", serr, MSG); \
+    goto LABEL;                             \
+  })
 
 #ifdef VERBOSE
 #define verbose(...) printf(__VA_ARGS__);
@@ -32,7 +32,6 @@ int main(int argc, char** argv) {
   int err = 0;
   char serr[1024] = {0};
 
-
   fprintf(stderr, "hashing '%s', ", argv[1]);
 
   int fd = open(argv[1], O_RDONLY | O_NONBLOCK | O_NOCTTY);
@@ -47,11 +46,13 @@ int main(int argc, char** argv) {
   fprintf(stderr, "length=%zu..\n", length);
 
   uint8_t* in = length ? mmap(0, length, PROT_READ, MAP_SHARED, fd, 0) : NULL;
-  if (length && (in == MAP_FAILED)) { E(close, "mmap failed"); }
+  if (length && (in == MAP_FAILED)) {
+    E(close, "mmap failed");
+  }
 
   uint8_t out[OBYTES] = {0};
   SHAFN(out, OBYTES, in, length);
-  length && munmap(in, length);
+  length&& munmap(in, length);
 
   verbose("%s('%s') = ", NAME, argv[1]);
   FOR(i, 1, OBYTES, printf("%02x", out[i]));

@@ -3,12 +3,12 @@ include clang.ninja
 
 b = build
 
-cflags = $cflags -D'INLINE=__attribute__((always_inline))'
+cflags = -O3 -march=native -D'INLINE=__attribute__((always_inline))'
 v = -DVERBOSE
 
 #build $b/kck128sum: cexec_optim f202.c kcku.c kcksum_threads.c
 #  defs = -DSHAFN=shake128 -DOBYTES=32 -D'NAME="SHAKE128"' $v
-build $b/kck256sum: cexec_optim f202.c kcku.c kcksum_threads.c
+build $b/kck256sum: cexec_optim fips202.c kcku.c kcksum_threads.c
   defs = -DSHAFN=shake256 -DOBYTES=64 -D'NAME="SHAKE256"' $v
 #build $b/kck512sum: cexec_optim f202.c kcku.c kcksum_threads.c
 #  defs = -DSHAFN=sha3_512 -DOBYTES=64 -D'NAME="SHA3-512"' $v
@@ -48,11 +48,11 @@ build $b/kck512sum.o: c kcksum_threads.c
   defs = -DSHAFN=sha3_512 -DOBYTES=64 -D'NAME="SHA3-512"' $v
 
 
-build $b/sha3_224sum: cexec $b/sha3_224sum.o $b/kck.o
-build $b/sha3_256sum: cexec $b/sha3_256sum.o $b/kck.o
-build $b/sha3_384sum: cexec $b/sha3_384sum.o $b/kck.o
-build $b/sha3_512sum: cexec $b/sha3_512sum.o $b/kck.o
-build $b/shake128sum: cexec $b/shake128sum.o $b/kck.o
-build $b/shake256sum: cexec $b/shake256sum.o $b/kck.o
-build $b/kck128sum: cexec $b/kck128sum.o $b/kck.o
-build $b/kck256sum: cexec $b/kck256sum.o $b/kck.o
+#build $b/sha3_224sum: cexec $b/sha3_224sum.o $b/kck.o
+#build $b/sha3_256sum: cexec $b/sha3_256sum.o $b/kck.o
+#build $b/sha3_384sum: cexec $b/sha3_384sum.o $b/kck.o
+#build $b/sha3_512sum: cexec $b/sha3_512sum.o $b/kck.o
+#build $b/shake128sum: cexec $b/shake128sum.o $b/kck.o
+#build $b/shake256sum: cexec $b/shake256sum.o $b/kck.o
+#build $b/kck128sum: cexec $b/kck128sum.o $b/kck.o
+#build $b/kck256sum: cexec $b/kck256sum.o $b/kck.o

@@ -11,14 +11,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define rol(x, s) (((x) << s) | ((x) >> (64-s)))
-#define mod5(i) ((i)%5)
+#define rol(x, s) (((x) << s) | ((x) >> (64 - s)))
+#define mod5(i) ((i) % 5)
 
 #define R6(e) e e e e e e
 #define R24(e) R6(e e e e)
 
-SIV keccakr(uint64_t* const restrict state,
-            const uint64_t rc) {
+SIV keccakr(uint64_t* const restrict state, const uint64_t rc) {
   uint64_t BC[5] = {0};
   uint64_t t = 0;
   uint8_t x, y;
@@ -60,6 +59,7 @@ SIV keccakr(uint64_t* const restrict state,
 }
 
 void keccakf(void* const state) {
-  //FOR(i, 1, 24, keccakr((uint64_t*)state, RC[i]));
-  int i = 0; R24(keccakr((uint64_t*)state, RC[i]); i++; )
+  // FOR(i, 1, 24, keccakr((uint64_t*)state, RC[i]));
+  int i = 0;
+  R24(keccakr((uint64_t*)state, RC[i]); i++;)
 }

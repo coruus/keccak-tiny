@@ -17,17 +17,13 @@ typedef size_t size;
 typedef unsigned long long u8;
 
 #define _(S) \
-    do {     \
-        S    \
-    } while (0)
+  do {       \
+    S        \
+  } while (0)
 #define FOR(i, ST, L, S) \
-    _(for (size i = 0; i < L; i += ST) { S; })
+  _(for (size i = 0; i < L; i += ST) { S; })
 
-#define mkapply(NAME, S)                     \
-    FN NAME(bytes dst, bytes src, size len) \
-    {                                        \
-        FOR(i, 1, len, S);                   \
-    }
-
+#define mkapply(NAME, S) \
+  FN NAME(bytes dst, bytes src, size len) { FOR(i, 1, len, S); }
 
 #endif
