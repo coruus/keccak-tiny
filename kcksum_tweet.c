@@ -5,6 +5,8 @@
 decshake(128) decshake(256) decsha3(224) decsha3(256) decsha3(384) decsha3(512)                                             /*end keccak.h*/
 #define K static const /* Keccak constants: rho rotations, pi lanes, and iota RCs */                                      /*begin keccak.c*/
 typedef unsigned char byte;typedef byte*bytes;typedef unsigned long z;typedef unsigned long long u8;K u8 V=1ULL<<63;K u8 W=1ULL<<31;/*!gcc*/
+#define V (1ULL<<63)
+#define W (1ULL<31)
 K byte rho[24]={1,3,6,10,15,21,28,36,45,55,2,14,27,41,56,8,25,43,62,18,39,61,20,44};K u8 RC[24]={1,0x8082,V|0x808a,V|W|0x8000,0x808b,W|1,V|W
 |0x8081,V|0x8009,138,136,W|0x8009,W|10,W|0x808b,V|0x8b,V|0x8089,V|0x8003,V|0x8002,V|0x80,0x800a,V|W|0xa,V|W|0x8081,V|0x8080,W|1,V|W|0x8008};
 K byte pi[25]={10,7,11,17,18,3,5,16,8,21,24,4,15,23,19,13,12,2,20,14,22,9,6,1}; /**helpers:*/static inline z min(z a,z b){return (a<b)?a:b;}
@@ -29,7 +31,8 @@ static inline int hash(bytes o,z olen,bytes in,z ilen,z r,byte D){ if((o == (voi
 // If you're using as a prefix MAC, you MUST replace the body of "clear" with "memset_s(a, 200, 0, 200)" to avoid misoptimization.
 // @everyone_who_is_still_using_sha1 Please stop using SHA-1.
 // Oh, one more thing: a C11-threaded, memmapped shake256sum in 10 tweets. (Your libc may need a shim for C11 thread support.)
-// echo -n string stdio stdint fcntl sys/mman sys/stat sys/types unistd threads| tr ' ' \\n|xargs -n1 -I_ echo '#include <_.h>'
+// echo -n string stdio stdint fcntl sys/mman sys/stat sys/types unistd threads|tr ' ' \\n|xargs -n1 -I_ echo '#include <_.h>'
+#include "kcksum_tweet.h"
 #define E(LABEL, MSG) if (err != 0) { strerror_r(err, serr, 1024); fprintf(stderr, "%s: '%s' %s\n", serr, fn, MSG); goto LABEL;}
 static mtx_t iomtx;void h(void* v);void h(void* v){char* fn=(char*)v;int err=0;char serr[1024]={0};/*open file*/int fd=open(fn, O_RDONLY);
 err=!fd;E(ret,"couldn't be opened.");/*stat it*/struct stat stat;err=fstat(fd,&stat);E(close,"doesn't exist.");err=!!(stat.st_mode&S_IFDIR);
@@ -38,5 +41,4 @@ if(length&&(in==MAP_FAILED)){E(close,"mmap-ing failed.");}byte out[64]={0};/*has
 /*lock io*/mtx_lock(&iomtx);printf("SHAKE256('%s') = ", fn);FOR(i,1,64,printf("%02x",out[i]));printf("\n");mtx_unlock(&iomtx);/*unlock io*/
 close:close(fd);ret:thrd_exit(err);}int main(int argc,char** argv){int err=0; mtx_init(&iomtx, mtx_plain); thrd_t t[4]; int res[4],i,j,k;
 for(i=1;i<argc;i+=4){for(j=0;j<4;j++){if((j+i)==argc){/*out of files*/goto join;} /*spawn*/ thrd_create(t + j,h,argv[i + j]);}
-join: for (k = 0; k < j; k++) { /*wait*/ err |= thrd_join(t[k], res + k); err |= res[k];} } return err; } /* done; retval != 0 on error*/
-// If you want slightly better than kinda-legible code and a build script (and test-cases too!), see https://github.com/coruus/keccak-tiny
+join: for (k = 0; k < j; k++) { /*wait*/ err |= thrd_join(t[k], res + k); err |= res[k];} } mtx_destroy(&iomtx); return err; } /* done! */
