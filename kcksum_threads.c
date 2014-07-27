@@ -17,16 +17,14 @@
 
 #define _(S) do { S } while (0)
 
-#define FOR(i, ST, L, S) \
-  _(for (size_t i = 0; i < L; i += ST) { S; })
-
-#define E(LABEL, MSG)                                      \
-  _(if (err != 0) {                                        \
-    strerror_r(err, serr, 1024);                           \
-    mtx_lock(&iomtx);                                      \
-    fprintf(stderr, "%s: '%s' %s\n", serr, filename, MSG); \
-    mtx_unlock(&iomtx);                                    \
-    goto LABEL;                                            \
+#define E(LABEL, MSG)                                         \
+  _(if (err != 0) {                                           \
+      char serr[1024] = {0};                                  \
+      strerror_r(err, serr, 1024);                            \
+      mtx_lock(&iomtx);                                       \
+      fprintf(stderr, "%s: '%s' %s\n", serr, filename, MSG);  \
+      mtx_unlock(&iomtx);                                     \
+      goto LABEL;                                             \
   })
 
 #ifdef VERBOSE
@@ -35,11 +33,21 @@
 #define verbose(...) fprintf(stderr, __VA_ARGS__);
 #endif
 
+#ifndef SHAFN
+#define SHAFN shake256
+#endif
+#ifndef OBYTES
+#define OBYTES 64
+#endif
+
 #define nthreads 4
 
 static mtx_t iomtx;
 
-/** Highly restrictive terminal escaping. **/
+/** Escape a character and output it.
+ *
+ * @param c [in] The character to output.
+ */
 static inline void printescaped(char c) {
   if (   ((c >= 'A') && (c <= 'z'))
       || ((c >= 'a') && (c <= 'z'))
@@ -53,10 +61,13 @@ static inline void printescaped(char c) {
   }
 }
 
+/** Hash a file.
+ *
+ * @param v [in] The filename.
+ */
 static inline void hash_file(void* v) {
   char* filename = (char*)v;
   int err = 0;
-  char serr[1024] = {0};
 
   int fd = open(filename, O_RDONLY | O_NONBLOCK | O_NOCTTY);
   err = !fd;
