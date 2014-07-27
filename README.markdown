@@ -1,49 +1,30 @@
-# kcksum
+# libkeccak-tiny
 
-An implementation of Keccak, SHA-3, and SHAKE in 135 cloc.
+An implementation of the FIPS-202-defined SHA-3 and SHAKE functions
+in 120 cloc (156 lines). One C file, one header.
 
-A small (POSIX-only) sha3sum utility in 50 more.
-
-(And add C11 threads for another 20.)
-
-Who said Keccak was complicated? Seriously, please stop using SHA1.
+The `Keccak-f[1600]` permutation is fully unrolled; it's nearly as fast
+as the Keccak team's optimized permutation.
 
 ## Building
 
-    > ninja
+    > clang -O3 -march=native -std=c11 -Wextra -dynamic -shared keccak-tiny.c -o libkeccak-tiny.dylib
 
-## Testing
-
-All ShortMsgKATs from github.com/gvanas/KeccakCodePackage/TestVectors.
-Do:
-
-    > ./scripts/tests.sh
-    ...
-     0 files changed
+If you don't have a modern libc that includes the `memset_s` function,
+you can just add `-D"memset_s(W,WL,V,OL)=memset(W,V,OL)` to the command
+line.
 
 ## Using
 
-Programs compiled with optimization:
+Build the library, include the header, and do, e.g.,
 
-   - *kck128sum*: SHAKE128 with 32 bytes of output
-   - *kck256sum*: SHAKE256 with 64 bytes of output
+    shake256(out, 256, in, inlen);
 
-These SHAKE instances offer, respectively, uniform 128- and 256-bit
-security strengths against all attacks.
+That's it.
 
-Programs compiled with ASan and UBSan:
-
-    - *shake128sum*: SHAKE128 with 512 bytes of output
-    - *shake256sum*: SHAKE256 with 512 bytes of output
-    - *sha3_224sum*: SHA3-224
-    - *sha3_256sum*: SHA3-256
-    - *sha3_384sum*: SHA3-384
-    - *sha3_512sum*: SHA3-512
-
-## Endorsed by
-
-Nobody. Well, except for me.
+(Note: You can request less output from the fixed-output-length
+functions, but not more.)
 
 ## License
 
-3BSD.
+CC0
