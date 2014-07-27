@@ -1,7 +1,9 @@
+/** A tiny, multi-threaded shasum utility. **/
+
 #include "fips202.h"
-#include "u.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -13,10 +15,17 @@
 
 #include "threads.h"
 
+#define _(S) do { S } while (0)
+
+#define FOR(i, ST, L, S) \
+  _(for (size_t i = 0; i < L; i += ST) { S; })
+
 #define E(LABEL, MSG)                                      \
   _(if (err != 0) {                                        \
     strerror_r(err, serr, 1024);                           \
+    mtx_lock(&iomtx);                                      \
     fprintf(stderr, "%s: '%s' %s\n", serr, filename, MSG); \
+    mtx_unlock(&iomtx);                                    \
     goto LABEL;                                            \
   })
 
@@ -30,8 +39,21 @@
 
 static mtx_t iomtx;
 
-void hash_file(void* v);
-void hash_file(void* v) {
+/** Highly restrictive terminal escaping. **/
+static inline void printescaped(char c) {
+  if (   ((c >= 'A') && (c <= 'z'))
+      || ((c >= 'a') && (c <= 'z'))
+      || ((c >= '0') && (c <= '9'))
+      || (c == '_') || (c == '-') || (c == '.')
+      || (c == '/') || (c == ',') || (c == '+')
+      || (c == ' ') || (c == '(') || (c == ')')) {
+    verbose("%c", c);
+  } else {
+    verbose("\\x%02x", c);
+  }
+}
+
+static inline void hash_file(void* v) {
   char* filename = (char*)v;
   int err = 0;
   char serr[1024] = {0};
@@ -57,10 +79,21 @@ void hash_file(void* v) {
   SHAFN(out, OBYTES, in, length);
   length&& munmap(in, length);
 
+  // Take the IO mutex.
   mtx_lock(&iomtx);
-  printf("%s('%s') = ", NAME, filename);
-  FOR(i, 1, OBYTES, printf("%02x", out[i]));
+  verbose("%s(\"", NAME);  // The function name
+  // The (possibly escaped) filename
+  while (*filename != 0) {
+    printescaped(*filename);
+    filename++;
+  }
+  verbose("\") = ");
+  // And the hash output, in hexademical.
+  for (int i = 0; i < OBYTES; i++) {
+    printf("%02x", out[i]);
+  }
   verbose("\n");
+  // And release the IO mutex.
   mtx_unlock(&iomtx);
 
 close:

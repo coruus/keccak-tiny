@@ -1,26 +1,21 @@
-#ifndef F202_H
-#define F202_H
+#ifndef FIPS202_H
+#define FIPS202_H
 #include "keccak.h"
-#include "u.h"
 
-#define decshake(bits) F2 shake##bits(bytes, size, bytes, size);
+#include <stdint.h>
+#include <stdlib.h>
 
-decshake(128) decshake(256)
+#define decshake(bits) \
+  int shake##bits(uint8_t*, size_t, const uint8_t*, size_t);
 
-#define decsha3(bits) F2 sha3_##bits(bytes, size, bytes, size);
-    decsha3(224) decsha3(256) decsha3(384) decsha3(512)
+#define decsha3(bits) \
+  int sha3_##bits(uint8_t*, size_t, const uint8_t*, size_t);
 
-// Can substitute an arbitrary permutation for Keccak-f.
-#define P keccakf
-#define Plen 200
+decshake(128) //
+decshake(256) //
+decsha3(224)  //
+decsha3(256)  //
+decsha3(384)  //
+decsha3(512)  //
 
-// Fold P*F over the full blocks of an input.
-#define foldP(I, L, F) \
-  while (L >= rate) {  \
-    F(a, I, rate);     \
-    P(a);              \
-    I += rate;         \
-    L -= rate;         \
-  }
-
-#endif  // F202_H
+#endif
