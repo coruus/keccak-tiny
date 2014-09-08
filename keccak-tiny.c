@@ -5,6 +5,9 @@
  * Implementor: David Leon Gil
  * License: CC0, attribution kindly requested. Blame taken too,
  * but not liability.
+ *
+ * Latest version available at:
+ *   https://github.com/coruus/keccak-tiny
  */
 #include "keccak-tiny.h"
 
