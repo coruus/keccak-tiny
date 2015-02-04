@@ -1,36 +1,31 @@
+//#ifndef FIRSTPASS
+#include "shake.h"
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef asssert
+#define assert(x)
+#endif // assert
 
-
-/*******************************************************************************
- * Helper macros.
- */
+////////////////////////////////////////////////////////////////////////////////
+// Helper macros.
+//
 #ifndef UINT64_C
 // TODO(dlg): SC?
 #define UINT64_C(VAL) (VAL##ULL)
 #endif
 
 #ifndef SIZE_C
-#define SIZE_C(VAL) ((size_t)(VAL##ULL))
+#define SIZE_C(VAL) ((size_t)(VAL))
 #endif
-
-// Errors.
-#define SPONGERR_NULL      -1  /* a passed pointer was NULL             */
-#define SPONGERR_RSIZE     -2  /* the passed length is > RSIZE_MAX      */
-#define SPONGERR_INVARIANT  1  /* the sponge invariant was violated     */
-#define SPONGERR_NOTINIT    2  /* the sponge isn't initalized           */
-#define SPONGERR_FINALIZED  3  /* the sponge has already been finalized */
-
-// Wrap blocks.
-#define _(S) do { S } while (0)
 
 // Checks for errors.
 #define checkinv(SPONGE) \
-  _(if (sponge->position >= sponge_rate) { return SPONGERR_INVARIANT; })
-#define checknull(PTR) _(if (PTR == NULL) { return SPONGERR_NULL; })
-#define checkrsize(LEN) _(if ((size_t)LEN > (SIZE_MAX >> 1)) { return SPONGERR_RSIZE; })
+  if (sponge->position >= sponge_rate) { return SPONGERR_INVARIANT; }
+#define checknull(PTR) if (PTR == NULL) { return SPONGERR_NULL; }
+#define checkrsize(LEN) if ((size_t)LEN > (SIZE_MAX >> 1)) { return SPONGERR_RSIZE; }
 
 #define mkapply_ds(NAME, S)                                               \
   static inline void NAME(uint8_t* dst, const uint8_t* src, size_t len) { \
@@ -44,9 +39,6 @@
  * @param len
  */
 mkapply_ds(_xorinto, dst[i] ^= src[i])  //
-
-
-
 
 /*******************************************************************************
  * The Keccak-f[1600] permutation
@@ -67,11 +59,10 @@ static const uint64_t RC[24] = \
   {1ULL, 0x8082ULL, 0x800000000000808aULL, 0x8000000080008000ULL,
    0x808bULL, 0x80000001ULL, 0x8000000080008081ULL, 0x8000000000008009ULL,
    0x8aULL, 0x88ULL, 0x80008009ULL, 0x8000000aULL,
-   0x8000808bULL, 0x800000000000008bULL, 0x8000000000008089ULL, 0x8000000000008003ULL,
-   0x8000000000008002ULL, 0x8000000000000080ULL, 0x800aULL, 0x800000008000000aULL,
-   0x8000000080008081ULL, 0x8000000000008080ULL, 0x80000001ULL, 0x8000000080008008ULL};
-
-
+   0x8000808bULL, 0x800000000000008bULL, 0x8000000000008089ULL,
+   0x8000000000008003ULL, 0x8000000000008002ULL, 0x8000000000000080ULL,
+   0x800aULL, 0x800000008000000aULL, 0x8000000080008081ULL,
+   0x8000000000008080ULL, 0x80000001ULL, 0x8000000080008008ULL};
 
 /*******************************************************************************
  * Keccak-f[1600]
@@ -122,34 +113,15 @@ static inline void keccakf(void* state) {
  * The sponge construction.
  */
 
-/* The sponge structure.
- * 
- * X-well alignment, to avoid 4KiB aliasing:
- *        224 %  32 ==  0
- *   but 4096 % 224 == 64
- */
-typedef struct sponge {
-  uint64_t a[25];    // the sponge state
-  uint64_t _[1];     // 8 byts of padding
-  uint64_t flags;    // the hash object's status
-  uint64_t position; // the position into the sponge
-} keccak_sponge;
-
 
 // Flags indicating sponge state.
-#define hash_absorbing UINT64_C(0x53efb6b64647b401)
-#define hash_squeezing UINT64_C(0x44a50aed67ba8c04)
+#define FLAG_ABSORBING   UINT64_C(0x53efb6b64647b401)
+#define FLAG_SQUEEZING   UINT64_C(0x44a50aed67ba8c04)
+#define FLAG_SPONGEPRG   UINT64_C(0xbf0420879da9f2d9)
 
-// Lengths.
-#define sponge_bytelen           SIZE_C(200)
-/* sponge_rate == sponge_bytelen - sponge_capacity */
-#define sponge_rate              SIZE_C(136)
-/* sponge_security_strength == capacity / 2 == 32B == 256b */
-#define sponge_security_strength SIZE_C(32) 
-
-
-
-
+#define permute(sponge) \
+  keccakf(sponge->a);   \
+  sponge->position = 0;
 
 #define SPONGEDO(STMT)                                         \
   size_t done;                                                 \
@@ -195,8 +167,7 @@ static inline void _shake_pad(keccak_sponge* const restrict sponge) {
   // little-endian *bit* ordering   2^ 01234567
   state[sponge->position] ^= 0x1f;  // 11111000
   state[sponge_rate - 1]  ^= 0x80;  // 00000001
-  keccakf(sponge->a);
-  sponge->position = 0;
+  permute(sponge);
 }
 
 static inline void _sponge_forget(keccak_sponge* const restrict sponge, const size_t len) {
@@ -216,11 +187,11 @@ static inline void _sponge_forget(keccak_sponge* const restrict sponge, const si
  * @param sponge[out] Pointer to sponge to initialize.
  * @return 0 on success; -1 if the pointer is NULL.
  */
-int shake256_init(keccak_sponge* const restrict sponge) {
+int _S(shake, init) (keccak_sponge* const restrict sponge) {
   checknull(sponge);
-  sponge->position = 0;
   memset(sponge->a, 0, 200);
-  sponge->flags = hash_absorbing;
+  sponge->position = 0;
+  sponge->flags = FLAG_ABSORBING;
   return 0;
 }
 
@@ -233,28 +204,26 @@ int shake256_init(keccak_sponge* const restrict sponge) {
  *         sponge has already been finalized, or has not yet
  *         been initialized.
  */
-int shake256_absorb(keccak_sponge* const restrict sponge,
-                    const uint8_t* const restrict in,
-                    const size_t inlen) {
+int _S(shake, absorb) (keccak_sponge* const restrict sponge,
+                       const uint8_t* const restrict in,
+                       const size_t inlen) {
   int err = 0;  
   checknull(sponge);
   checknull(in);
   checkrsize(inlen);
   checkinv(sponge);
   switch (sponge->flags) {
-    case (hash_squeezing):
+    case (FLAG_SQUEEZING):
       // The sponge has already been finalized by applying padding.
       return 2;
-    case (hash_absorbing):
+    case (FLAG_ABSORBING):
       break;
     default:
       // The sponge hasn't been initialized.
       return 1;
   }
 
-  size_t remaining = inlen;
-  size_t pos = 0;
-  _sponge_absorb(sponge, &in[pos], remaining);
+  _sponge_absorb(sponge, &in[sponge->position], inlen);
 
   return err;
 }
@@ -267,21 +236,21 @@ int shake256_absorb(keccak_sponge* const restrict sponge,
  * @return 0 on success, < 0 if a pointer is NULL, > 0 if the
  *         sponge has not yet been initialized.
  */
-int shake256_squeeze(keccak_sponge* const restrict sponge,
-                     uint8_t* const restrict out,
-                     const size_t outlen) {
+int _S(shake, squeeze) (keccak_sponge* const restrict sponge,
+                        uint8_t* const restrict out,
+                        const size_t outlen) {
   checknull(sponge);
   checknull(out);
   checkrsize(outlen);
   checkinv(sponge);
 
   switch (sponge->flags) {
-    case (hash_squeezing):
+    case (FLAG_SQUEEZING):
       break; 
-    case (hash_absorbing):
+    case (FLAG_ABSORBING):
       // If we're still absorbing, pad the message and apply Keccak-f.
       _shake_pad(sponge);
-      sponge->flags = hash_squeezing;
+      sponge->flags = FLAG_SQUEEZING;
       break;
     default:
       // The sponge hasn't been initialized.
@@ -293,6 +262,7 @@ int shake256_squeeze(keccak_sponge* const restrict sponge,
   return 0;
 }
 
+
 /** "Forget" the previous state of the sponge by overwriting
  * security_strength bytes of the state with zeros.
  *
@@ -300,47 +270,89 @@ int shake256_squeeze(keccak_sponge* const restrict sponge,
  * @return 0 on success, < 0 if a pointer is NULL, > 0 if the
  *         sponge has not yet been initialized.
  */
-int spongerng_forget(keccak_sponge* const restrict sponge) {
+int _S(sprng, forget) (keccak_sponge* const restrict sponge) {
   checknull(sponge);
   checkinv(sponge);
 
-  switch (sponge->flags) {
-    case (hash_squeezing):
-      break;
-    case (hash_absorbing):
-      // If we're still absorbing, pad the message and apply Keccak-f.
-      _shake_pad(sponge);
-      sponge->flags = hash_squeezing;
-      break;
-    default:
-      // The sponge hasn't been initialized.
-      return SPONGERR_NOTINIT;
-  }
+  permute(sponge); 
  
-  // Write 32 zero bytes.
+  // Write sponge_security_strength zero bytes.
   _sponge_forget(sponge, sponge_security_strength);
+
   // Apply padding.
   _shake_pad(sponge);
-  sponge->flags = hash_absorbing;
-  
+  if (sponge->position == 0) {
+    // The permutation was applied because of the padding rule.
+    return 0;
+  }
+
+  // The permutation has not yet been applied.
+  permute(sponge);
+
   return 0;
 }
 
-#define spongerng_init shake256_init
-#define spongerng_read shake256_squeeze
+int _S(sprng, init) (keccak_sponge* const restrict sponge,
+                     uint8_t* const entropy,
+                     const size_t entropylen) {
+  checknull(sponge);
+  checknull(entropy);
+  checkrsize(entropylen);
 
-int spongerng_next(keccak_sponge* const restrict sponge,
-                   const uint8_t* const entropy,
-                   const size_t entropylen) {
-  int err = 0;
-  // QQQQ: Is it better to absorb first?
-  err = spongerng_forget(sponge);
-  if (err != 0) { 
-    return err;
+  memset(sponge, 0, sizeof(keccak_sponge));    // Initialize the sponge struct,
+  _sponge_absorb(sponge, entropy, entropylen); // absorb the entropy into the state,
+  memset(entropy, 0, entropylen);              // and zeroize the input buffer.
+  
+  int err = sprng256_forget(sponge);           // Forget to prevent baktracking.
+  assert((sponge->position == 0) && (err == 0));
+  
+  return err;
+}
+
+int _S(sprng, next) (keccak_sponge* const restrict sponge,
+                     uint8_t* const entropy,
+                     const size_t entropylen) {
+  checknull(sponge);
+  checknull(entropy);
+  checkrsize(entropylen);
+  if (sponge->flags != FLAG_SPONGEPRG) {
+    return SPONGERR_NOTINIT;
   }
-  err = shake256_absorb(sponge, entropy, entropylen);
+
+  _sponge_absorb(sponge, entropy, entropylen); // Absorb the entropy,
+  memset(entropy, 0, entropylen);              // zeroize the buffer,
+  
+  int err = sprng256_forget(sponge);           // And prevent baktracking.
+  assert((sponge->position == 0) && (err == 0));
+  
+  return err;
+}
+
+int _S(sprng, squeeze) (keccak_sponge* const restrict sponge,
+                        uint8_t* const restrict out,
+                        const size_t outlen) {
+  checknull(sponge);
+  checknull(out);
+  checkrsize(outlen);
+  checkinv(sponge);
+
+  if (sponge->flags != FLAG_SPONGEPRG) {
+    // The SpongePRG hasn't been initialized.
+    return SPONGERR_NOTINIT;
+  }
+  
+  _sponge_squeeze(sponge, out, outlen);
+  return 0;
+}
+
+int _S(sprng, random) (keccak_sponge* const restrict sponge,
+                       uint8_t* const restrict out,
+                       const size_t outlen) {
+  int err = sprng256_squeeze(sponge, out, outlen);
   if (err != 0) {
     return err;
   }
-  return 0;
+  err = sprng256_forget(sponge);
+  assert((sponge->position == 0) && (err == 0));
+  return err;
 }
