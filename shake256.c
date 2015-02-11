@@ -291,6 +291,25 @@ int shake256_squeeze(keccak_sponge* const restrict sponge,
   return 0;
 }
 
+
+/** Hash an input buffer to get output using SHAKE256. */
+int shake256(uint8_t* const restrict out, const size_t outlen,
+             const uint8_t* const restrict in, const size_t inlen) {
+  int err = 0;
+  keccak_sponge sponge;
+  err = shake256_init(&sponge);
+  if (err != 0) {
+    return err;
+  }
+  err = shake256_absorb(&sponge, in, inlen);
+  if (err != 0) {
+    return err;
+  }
+  err = shake256_squeeze(&sponge, out, outlen);
+  memset(&sponge, 0, sizeof(keccak_sponge));
+  return err;
+}
+
 /** Initialize a SpongePRG with some entropy. Immediately calls sprng_forget
  * to prevent backtracking to the entropy. NOTE: The input buffer is zeroized.
  *
