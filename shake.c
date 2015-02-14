@@ -123,6 +123,8 @@ static inline void keccakf(void* state) {
   keccakf(sponge->a);   \
   sponge->position = 0;
 
+#define _S(A, B) A ## 256 ## _ ## B
+
 #define SPONGEDO(STMT)                                         \
   size_t done;                                                 \
   do {                                                         \
@@ -179,10 +181,10 @@ static inline void _sponge_forget(keccak_sponge* const restrict sponge, const si
 }
 
 /*******************************************************************************
- * SHAKE256
+ * SHAKE
  */
 
-/** Initialize a SHAKE256 sponge.
+/** Initialize a SHAKE instance.
  *
  * @param sponge[out] Pointer to sponge to initialize.
  * @return 0 on success; -1 if the pointer is NULL.
@@ -262,18 +264,11 @@ int _S(shake, squeeze) (keccak_sponge* const restrict sponge,
   return 0;
 }
 
-
-/** "Forget" the previous state of the sponge by overwriting
- * security_strength bytes of the state with zeros.
- *
- * @param  sponge[in,out]  Pointer to sponge.
- * @return 0 on success, < 0 if a pointer is NULL, > 0 if the
- *         sponge has not yet been initialized.
- */
 int _S(sprng, forget) (keccak_sponge* const restrict sponge) {
   checknull(sponge);
   checkinv(sponge);
-
+  
+  // Apply the permutation to get to zero.
   permute(sponge); 
  
   // Write sponge_security_strength zero bytes.
