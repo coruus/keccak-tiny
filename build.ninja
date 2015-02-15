@@ -1,0 +1,20 @@
+cc = clang
+so = dylib
+include clang.ninja
+
+b = build
+
+#cflags = -O3 -march=native -D'INLINE=__attribute__((always_inline))'
+cflags = $cflags -Wno-missing-noreturn
+v = -DVERBOSE
+
+build $b/shake256.dylib: c shake256.c
+
+build $b/shake256sum.o: c kcksum_threads.c
+  defs = -DSHAFN=shake256 -DOBYTES=512 -D'NAME="SHAKE256"'
+
+build $b/kck256sum.o: c kcksum_threads.c
+  defs = -DSHAFN=shake256 -DOBYTES=64 -D'NAME="SHAKE256"' $v
+
+build $b/shake256sum: cexec $b/shake256sum.o $b/shake256.$so
+build $b/kck256sum: cexec $b/kck256sum.o $b/shake256.$so
