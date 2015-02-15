@@ -9,6 +9,8 @@
  *
  * Canonical version at https://github.com/coruus/keccak-tiny
  */
+#define  _KECCAK_SPONGE_INTERNAL
+#include "shakemac.h"
 
 #include <assert.h>
 #include <stdint.h>
@@ -16,22 +18,13 @@
 #include <string.h>
 #include <stdio.h>
 
-/* The internal, non-opaque definition of the sponge struct. */
-typedef struct sponge_internal {
-  uint64_t a[25];     // the sponge state
-  uint64_t _[1];      // 8 bytes of padding (or space for the rate)
-  uint64_t flags;     // the hash object's status
-  uint64_t position;  // the position into the sponge
-} keccak_sponge;
-
-#define keccak_sponge struct sponge_internal
-
 /* For future compilers that support it: */
 // static_assert(sizeof(keccak_sponge_opaque) >= sizeof(keccak_sponge));
 // static_assert(alignof(keccak_sponge_opaque) >= alignof(keccak_sponge));
 
+#ifndef memset_s
 #define memset_s(d, dlen, v, len) memset(d, v, dlen)
-
+#endif 
 /*** The Keccak-f[1600] permutation ***/
 
 /** Constants. **/
@@ -158,30 +151,10 @@ static inline void _shake_pad(keccak_sponge* const restrict sponge,
   sponge->position = 0;
 }
 
-static inline void _sponge_forget(keccak_sponge* const restrict sponge,
-                                  const size_t len) {
-  size_t remaining = len;
-  while (remaining) {
-    size_t cando = sponge_rate - sponge->position;
-    uint8_t* state = ((uint8_t*)sponge->a) + sponge->position;
-    if (cando > remaining) {
-      memset(state, 0, remaining);
-      sponge->position += remaining;
-      remaining = 0;
-    } else {
-      memset(state, 0, cando);
-      keccakf(sponge->a);
-      sponge->position = 0;
-      remaining -= cando;
-    }
-  }
-}
-
 /** SHAKE256 **/
 
 #define FLAG_ABSORBING UINT64_C(0x53efb6b64647b401)
 #define FLAG_SQUEEZING UINT64_C(0x44a50aed67ba8c04)
-#define FLAG_SPONGEPRG UINT64_C(0xbf0420879da9f2d9)
 #define DS_SHAKE 0x1f
 #define DS_MACKEY 0x3f
 
@@ -284,7 +257,6 @@ int mac_init(keccak_sponge* const restrict sponge,
              const uint8_t* const key,
              const size_t keylen) {
   int err = 0;
-  keccak_sponge sponge;
   err = shake256_init(sponge);
   if (err != 0) {
     return err;
@@ -300,7 +272,7 @@ int mac_init(keccak_sponge* const restrict sponge,
 int mac_cached(keccak_sponge* const restrict sponge,
                const uint8_t* const state) {
   int err = 0;
-  err = shake256_init(&sponge);
+  err = shake256_init(sponge);
   if (err != 0) {
     return err;
   }
@@ -317,12 +289,12 @@ int mac_cache_key(uint64_t* const state,
   if (err != 0) {
     return err;
   }
-  err = shake256_absorb(&sponge, in, inlen);
+  err = shake256_absorb(&sponge, key, keylen);
   if (err != 0) {
     return err;
   }
-  _shake_pad(sponge, DS_MACKEY);
-  memcpy(state, sponge->a, 200);
+  _shake_pad(&sponge, DS_MACKEY);
+  memcpy(state, &sponge.a, 200);
   memset_s(&sponge, sizeof(keccak_sponge), 0, sizeof(keccak_sponge));
   return err;
 }

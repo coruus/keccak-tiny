@@ -1,4 +1,8 @@
 #ifndef _SHAKE256_H
+#ifdef __cplusplus
+#define restrict
+extern "C" {
+#endif
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -14,9 +18,15 @@
  * alignment for your target.
  */
 #ifndef _KECCAK_SPONGE_INTERNAL
-#define keccak_sponge keccak_sponge_opaque
+typedef struct sponge { uint64_t _[28]; } keccak_sponge;
+#else
+typedef struct sponge {
+  uint64_t a[25];     // the sponge state
+  uint64_t _[1];      // 8 bytes of padding (or space for the rate)
+  uint64_t flags;     // the hash object's status
+  uint64_t position;  // the position into the sponge
+} keccak_sponge;
 #endif
-typedef struct sponge { uint64_t _[28]; } keccak_sponge_opaque;
 
 /** Shake256.
  *
@@ -80,6 +90,7 @@ int mac_cache_key(uint64_t* const state,
 #define SPONGERR_NOTINIT 2   /* the sponge isn't initalized           */
 #define SPONGERR_FINALIZED 3 /* the sponge has already been finalized */
 
-
-
+#ifdef __cplusplus
+};
+#endif
 #endif
