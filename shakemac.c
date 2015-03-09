@@ -1,11 +1,17 @@
 /** shake256-mac
  *
+ * COPYRIGHT 2015
+ *
  * A single-file implementation of Shake256 and a padded prefix-MAC
  * mode, with optional state caching.
  *
- * Authors:  David Leon Gil (coruus@gmail.com)
- *           Yahoo (dgil@yahoo-inc.com)
- * License:  Apache 2
+ * Authors: 
+ *   David Leon Gil (coruus@gmail.com)
+ *   Yahoo! Inc.
+ * Contributors:
+ *   David Leon Gil (dgil@yahoo-inc.com)
+ *
+ * License: Apache 2
  *
  * Canonical version at https://github.com/coruus/keccak-tiny
  */
@@ -232,6 +238,32 @@ int shake256_squeeze(keccak_sponge* const restrict sponge,
   _sponge_squeeze(sponge, out, outlen);
 
   return 0;
+}
+
+
+int shake256_squeezemax(keccak_sponge* sponge,
+                        uint8_t* const restrict out,
+                        const size_t outlen,
+                        const uint8_t max) {
+  if (sponge == NULL) {
+    return SPONGERR_NULL;
+  }
+  if (out == NULL) {
+    return SPONGERR_NULL;
+  }
+  if (outlen > (SIZE_MAX >> 1)) {
+    return SPONGERR_RSIZE;
+  }
+  if (sponge->position >= sponge_rate) {
+    return SPONGERR_INVARIANT;
+  }
+  uint8_t buf[1] = {0};
+  while (outlen) {
+    do {
+      shake256_squeeze(sponge, out, 1);
+    } while (!(*out < max));
+    outlen--, out++;
+  }
 }
 
 int shake256(uint8_t* const restrict out,
