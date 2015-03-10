@@ -119,11 +119,12 @@ static inline void _sponge_absorb(keccak_sponge* const restrict sponge,
   }
 }
 
-static inline void _shake_pad(keccak_sponge* const restrict sponge) {
+static inline void _sponge_pad(keccak_sponge* const restrict sponge,
+    uint8_t ds) {
   uint8_t* state = ((uint8_t*)sponge->a);
   /* little-endian *bit* ordering   2^ 01234567 */
-  state[sponge->position] ^= 0x1f; /* 11111000 */
-  state[sponge_rate - 1] ^= 0x80;  /* 00000001 */
+  state[sponge->position] ^= ds; /* 11111000 */
+  state[sponge_rate - 1]  ^= 0x80;  /* 00000001 */
   keccakf(sponge->a);
   sponge->position = 0;
 }
@@ -147,11 +148,13 @@ static inline void _sponge_forget(keccak_sponge* const restrict sponge,
   }
 }
 
-/** SHAKE256 **/
+/** SHAKE **/
 
 #define FLAG_ABSORBING UINT64_C(0x53efb6b64647b401)
 #define FLAG_SQUEEZING UINT64_C(0x44a50aed67ba8c04)
 #define FLAG_SPONGEPRG UINT64_C(0xbf0420879da9f2d9)
+
+#define DS_SHAKE 0x1f
 
 /** Initialize a SHAKE instance.
  *
@@ -209,6 +212,31 @@ int shake_absorb(keccak_sponge* const restrict sponge,
   return err;
 }
 
+int shake_pad(keccak_sponge* const restrict sponge,
+                 const uint8_t ds) {
+  int err = 0;
+  if (sponge == NULL) {
+    return SPONGERR_NULL;
+  }
+  if (sponge->position >= sponge_rate) {
+    return SPONGERR_INVARIANT;
+  }
+  switch (sponge->flags) {
+    case (FLAG_SQUEEZING):
+      // The sponge has already been finalized by applying padding.
+      return 2;
+    case (FLAG_ABSORBING):
+      break;
+    default:
+      // The sponge hasn't been initialized.
+      return 1;
+  }
+
+  _sponge_pad(sponge, ds);
+
+  return err;
+}
+
 int shake_squeeze(keccak_sponge* const restrict sponge,
                   uint8_t* const restrict out,
                   const size_t outlen) {
@@ -230,7 +258,7 @@ int shake_squeeze(keccak_sponge* const restrict sponge,
       break;
     case (FLAG_ABSORBING):
       // If we're still absorbing, pad the message and apply Keccak-f.
-      _shake_pad(sponge);
+      _sponge_pad(sponge, DS_SHAKE);
       sponge->flags = FLAG_SQUEEZING;
       break;
     default:
@@ -306,7 +334,7 @@ int sprng_forget(keccak_sponge* const restrict sponge) {
   _sponge_forget(sponge, sponge_security_strength);
 
   // Apply padding.
-  _shake_pad(sponge);
+  _sponge_pad(sponge, DS_SHAKE);
   if (sponge->position == 0) {
     // The permutation was applied because of the padding rule.
     return 0;

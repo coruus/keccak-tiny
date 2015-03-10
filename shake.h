@@ -6,7 +6,7 @@
 /* sponge_rate == sponge_bytelen - sponge_capacity */
 #define sponge_rate 136
 /* sponge_security_strength == capacity / 2 == 32B == 256b */
-#define sponge_security_strength ((sponge_bytelen - sponge_capacity) / 2)
+#define sponge_security_strength 64
 
 /* The sponge structure. Callers must treat it as opaque.
  *
