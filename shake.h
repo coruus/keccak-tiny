@@ -6,7 +6,7 @@
 /* sponge_rate == sponge_bytelen - sponge_capacity */
 #define sponge_rate 136
 /* sponge_security_strength == capacity / 2 == 32B == 256b */
-#define sponge_security_strength 64
+#define sponge_security_strength ((sponge_bytelen - sponge_capacity) / 2)
 
 /* The sponge structure. Callers must treat it as opaque.
  *
@@ -25,15 +25,17 @@ typedef struct sponge { uint64_t _[28]; } keccak_sponge_opaque;
  * @param in [in]      Pointer to input buffer.
  * @param inlen [in]   Length of input to absorb.
  */
-int shake256(uint8_t* const out, const size_t outlen,
-             const uint8_t* const in, const size_t inlen);
+int shake(uint8_t* const out,
+          const size_t outlen,
+          const uint8_t* const in,
+          const size_t inlen);
 
 /** Initialize a SHAKE instance.
  *
  * @param sponge [out] Pointer to sponge to initialize.
  * @return 0 on success; -1 if the pointer is NULL.
  */
-int shake256_init(keccak_sponge* const restrict sponge);
+int shake_init(keccak_sponge* const restrict sponge);
 
 /** Absorb more data into the sponge.
  *
@@ -44,9 +46,9 @@ int shake256_init(keccak_sponge* const restrict sponge);
  *         sponge has already been finalized, or has not yet
  *         been initialized.
  */
-int shake256_absorb(keccak_sponge* const restrict sponge,
-                    const uint8_t* const restrict in,
-                    const size_t inlen);
+int shake_absorb(keccak_sponge* const restrict sponge,
+                 const uint8_t* const restrict in,
+                 const size_t inlen);
 
 /** Squeeze output from the sponge.
  *
@@ -57,9 +59,9 @@ int shake256_absorb(keccak_sponge* const restrict sponge,
  *         sponge has not yet been initialized.
  */
 
-int shake256_squeeze(keccak_sponge* const restrict sponge,
-                     uint8_t* const restrict out,
-                     const size_t outlen);
+int shake_squeeze(keccak_sponge* const restrict sponge,
+                  uint8_t* const restrict out,
+                  const size_t outlen);
 
 /** "Forget" the previous state of the sponge by overwriting
  * security_strength bytes of the state with zeros.
@@ -68,28 +70,28 @@ int shake256_squeeze(keccak_sponge* const restrict sponge,
  * @return 0 on success, < 0 if a pointer is NULL, > 0 if the
  *         sponge has not yet been initialized.
  */
-int sprng256_forget(keccak_sponge* const restrict sponge);
+int sprng_forget(keccak_sponge* const restrict sponge);
 
-int sprng256_init(keccak_sponge* const restrict sponge,
-                  uint8_t* const entropy,
-                  const size_t entropylen);
-int sprng256_next(keccak_sponge* const restrict sponge,
-                  uint8_t* const entropy,
-                  const size_t entropylen);
+int sprng_init(keccak_sponge* const restrict sponge,
+               uint8_t* const entropy,
+               const size_t entropylen);
+int sprng_next(keccak_sponge* const restrict sponge,
+               uint8_t* const entropy,
+               const size_t entropylen);
 
 /** Squeeze output, but don't forget -- i.e., prevent
  * backtracking. Must *always* be followed by a forget
  * function before exiting code that you control.
  */
-int sprng256_squeeze(keccak_sponge* const restrict sponge,
-                     uint8_t* const restrict out,
-                     const size_t outlen);
+int sprng_squeeze(keccak_sponge* const restrict sponge,
+                  uint8_t* const restrict out,
+                  const size_t outlen);
 /** Squeeze output, and then forget, to prevent an attacker
  * from backtracking to the output via the state of the sponge.
  */
-int sprng256_random(keccak_sponge* const restrict sponge,
-                    uint8_t* const restrict out,
-                    const size_t outlen);
+int sprng_random(keccak_sponge* const restrict sponge,
+                 uint8_t* const restrict out,
+                 const size_t outlen);
 
 // Errors.
 #define SPONGERR_NULL -1     /* a passed pointer was NULL             */

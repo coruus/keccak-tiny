@@ -13,11 +13,11 @@ typedef struct sponge_internal {
 } keccak_sponge;
 
 #define _KECCAK_SPONGE_INTERNAL
-#include "shake256.h"
+#include "shake.h"
 
 /* For future compilers that support it: */
-//static_assert(sizeof(keccak_sponge_opaque) >= sizeof(keccak_sponge));
-//static_assert(alignof(keccak_sponge_opaque) >= alignof(keccak_sponge));
+// static_assert(sizeof(keccak_sponge_opaque) >= sizeof(keccak_sponge));
+// static_assert(alignof(keccak_sponge_opaque) >= alignof(keccak_sponge));
 
 /*** The Keccak-f[1600] permutation ***/
 
@@ -26,14 +26,15 @@ static const uint8_t rho[24] = {1,  3,  6,  10, 15, 21, 28, 36, 45, 55, 2,  14,
                                 27, 41, 56, 8,  25, 43, 62, 18, 39, 61, 20, 44};
 static const uint8_t pi[24] = {10, 7,  11, 17, 18, 3, 5,  16, 8,  21, 24, 4,
                                15, 23, 19, 13, 12, 2, 20, 14, 22, 9,  6,  1};
-#define RC_B(x,n) ((((x##ull)>>n)&1)<<((1<<n)-1))
-#define RC_X(x) (RC_B(x,0)|RC_B(x,1)|RC_B(x,2)|RC_B(x,3)|RC_B(x,4)|RC_B(x,5)|RC_B(x,6))
+#define RC_B(x, n) ((((x##ull) >> n) & 1) << ((1 << n) - 1))
+#define RC_X(x)                                                                  \
+  (RC_B(x, 0) | RC_B(x, 1) | RC_B(x, 2) | RC_B(x, 3) | RC_B(x, 4) | RC_B(x, 5) | \
+   RC_B(x, 6))
 static const uint64_t RC[24] = {
     RC_X(0x01), RC_X(0x1a), RC_X(0x5e), RC_X(0x70), RC_X(0x1f), RC_X(0x21),
     RC_X(0x79), RC_X(0x55), RC_X(0x0e), RC_X(0x0c), RC_X(0x35), RC_X(0x26),
     RC_X(0x3f), RC_X(0x4f), RC_X(0x5d), RC_X(0x53), RC_X(0x52), RC_X(0x48),
-    RC_X(0x16), RC_X(0x66), RC_X(0x79), RC_X(0x58), RC_X(0x21), RC_X(0x74)
-};
+    RC_X(0x16), RC_X(0x66), RC_X(0x79), RC_X(0x58), RC_X(0x21), RC_X(0x74)};
 
 /** Keccak-f[1600] **/
 
@@ -61,9 +62,8 @@ static inline void keccakf(void* state) {
     x = 0;
     REPEAT24(b[0] = a[pi[x]]; a[pi[x]] = rol(t, rho[x]); t = b[0]; x++;)
     // Chi
-    FOR5(y, 5,
-         FOR5(x, 1, b[x] = a[y + x];) FOR5(
-             x, 1, a[y + x] = b[x] ^ ((~b[(x + 1) % 5]) & b[(x + 2) % 5]);))
+    FOR5(y, 5, FOR5(x, 1, b[x] = a[y + x];)
+                   FOR5(x, 1, a[y + x] = b[x] ^ ((~b[(x + 1) % 5]) & b[(x + 2) % 5]);))
     // Iota
     a[0] ^= RC[i];
   }
@@ -158,7 +158,7 @@ static inline void _sponge_forget(keccak_sponge* const restrict sponge,
  * @param sponge[out] Pointer to sponge to initialize.
  * @return 0 on success; -1 if the pointer is NULL.
  */
-int shake256_init(keccak_sponge* const restrict sponge) {
+int shake_init(keccak_sponge* const restrict sponge) {
   if (sponge == NULL) {
     return SPONGERR_NULL;
   };
@@ -177,9 +177,9 @@ int shake256_init(keccak_sponge* const restrict sponge) {
  *         sponge has already been finalized, or has not yet
  *         been initialized.
  */
-int shake256_absorb(keccak_sponge* const restrict sponge,
-                    const uint8_t* const restrict in,
-                    const size_t inlen) {
+int shake_absorb(keccak_sponge* const restrict sponge,
+                 const uint8_t* const restrict in,
+                 const size_t inlen) {
   int err = 0;
   if (sponge == NULL) {
     return SPONGERR_NULL;
@@ -209,9 +209,9 @@ int shake256_absorb(keccak_sponge* const restrict sponge,
   return err;
 }
 
-int shake256_squeeze(keccak_sponge* const restrict sponge,
-                     uint8_t* const restrict out,
-                     const size_t outlen) {
+int shake_squeeze(keccak_sponge* const restrict sponge,
+                  uint8_t* const restrict out,
+                  const size_t outlen) {
   if (sponge == NULL) {
     return SPONGERR_NULL;
   }
@@ -243,28 +243,28 @@ int shake256_squeeze(keccak_sponge* const restrict sponge,
   return 0;
 }
 
-int shake256(uint8_t* const restrict out,
-             const size_t outlen,
-             const uint8_t* const restrict in,
-             const size_t inlen) {
+int shake(uint8_t* const restrict out,
+          const size_t outlen,
+          const uint8_t* const restrict in,
+          const size_t inlen) {
   int err = 0;
   keccak_sponge sponge;
-  err = shake256_init(&sponge);
+  err = shake_init(&sponge);
   if (err != 0) {
     return err;
   }
-  err = shake256_absorb(&sponge, in, inlen);
+  err = shake_absorb(&sponge, in, inlen);
   if (err != 0) {
     return err;
   }
-  err = shake256_squeeze(&sponge, out, outlen);
+  err = shake_squeeze(&sponge, out, outlen);
   memset(&sponge, 0, sizeof(keccak_sponge));
   return err;
 }
 
-int sprng256_init(keccak_sponge* const restrict sponge,
-                  uint8_t* const entropy,
-                  const size_t entropylen) {
+int sprng_init(keccak_sponge* const restrict sponge,
+               uint8_t* const entropy,
+               const size_t entropylen) {
   if (sponge == NULL) {
     return SPONGERR_NULL;
   }
@@ -275,17 +275,16 @@ int sprng256_init(keccak_sponge* const restrict sponge,
     return SPONGERR_RSIZE;
   }
 
-  memset(sponge, 0, sizeof(keccak_sponge));  // Initialize the sponge struct,
-  sponge->flags = FLAG_SPONGEPRG;            // and the flags,
-  _sponge_absorb(sponge, entropy,
-                 entropylen);      // absorb the entropy into the state,
-  memset(entropy, 0, entropylen);  // and zeroize the input buffer.
+  memset(sponge, 0, sizeof(keccak_sponge));     // Initialize the sponge struct,
+  sponge->flags = FLAG_SPONGEPRG;               // and the flags,
+  _sponge_absorb(sponge, entropy, entropylen);  // absorb the entropy into the state,
+  memset(entropy, 0, entropylen);               // and zeroize the input buffer.
 
-  int err = sprng256_forget(sponge);  // Forget to prevent baktracking.
+  int err = sprng_forget(sponge);  // Forget to prevent baktracking.
   return err;
 }
 
-int sprng256_forget(keccak_sponge* const restrict sponge) {
+int sprng_forget(keccak_sponge* const restrict sponge) {
   if (sponge == NULL) {
     return SPONGERR_NULL;
   }
@@ -320,9 +319,9 @@ int sprng256_forget(keccak_sponge* const restrict sponge) {
   return 0;
 }
 
-int sprng256_next(keccak_sponge* const restrict sponge,
-                  uint8_t* const entropy,
-                  const size_t entropylen) {
+int sprng_next(keccak_sponge* const restrict sponge,
+               uint8_t* const entropy,
+               const size_t entropylen) {
   if (sponge == NULL) {
     return SPONGERR_NULL;
   }
@@ -339,14 +338,14 @@ int sprng256_next(keccak_sponge* const restrict sponge,
   _sponge_absorb(sponge, entropy, entropylen);  // Absorb the entropy,
   memset(entropy, 0, entropylen);               // zeroize the buffer,
 
-  int err = sprng256_forget(sponge);  // And prevent baktracking.
+  int err = sprng_forget(sponge);  // And prevent baktracking.
 
   return err;
 }
 
-int sprng256_squeeze(keccak_sponge* const restrict sponge,
-                     uint8_t* const restrict out,
-                     const size_t outlen) {
+int sprng_squeeze(keccak_sponge* const restrict sponge,
+                  uint8_t* const restrict out,
+                  const size_t outlen) {
   if (sponge == NULL) {
     return SPONGERR_NULL;
   }
@@ -367,13 +366,13 @@ int sprng256_squeeze(keccak_sponge* const restrict sponge,
   return 0;
 }
 
-int sprng256_random(keccak_sponge* const restrict sponge,
-                    uint8_t* const restrict out,
-                    const size_t outlen) {
-  int err = sprng256_squeeze(sponge, out, outlen);
+int sprng_random(keccak_sponge* const restrict sponge,
+                 uint8_t* const restrict out,
+                 const size_t outlen) {
+  int err = sprng_squeeze(sponge, out, outlen);
   if (err != 0) {
     return err;
   }
-  err = sprng256_forget(sponge);
+  err = sprng_forget(sponge);
   return err;
 }
