@@ -257,10 +257,11 @@ int shake256_squeezemax(keccak_sponge* sponge,
   if (sponge->position >= sponge_rate) {
     return SPONGERR_INVARIANT;
   }
+  _shake_pad(sponge, DS_MACKEY);
   uint8_t buf[1] = {0};
   while (outlen) {
     do {
-      shake256_squeeze(sponge, out, 1);
+      _sponge_squeeze(sponge, out, 1);
     } while (!(*out < max));
     outlen--, out++;
   }
