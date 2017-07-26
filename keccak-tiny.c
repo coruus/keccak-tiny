@@ -151,6 +151,14 @@ static inline int hash(uint8_t* out, size_t outlen,
     }                                                             \
     return hash(out, outlen, in, inlen, 200 - (bits / 4), 0x06);  \
   }
+#define defkeccak(bits)                                           \
+  int keccak_##bits(uint8_t* out, size_t outlen,                  \
+                  const uint8_t* in, size_t inlen) {              \
+    if (outlen > (bits/8)) {                                      \
+      return -1;                                                  \
+    }                                                             \
+    return hash(out, outlen, in, inlen, 200 - (bits / 4), 0x01);  \
+  }
 
 /*** FIPS202 SHAKE VOFs ***/
 defshake(128)
@@ -161,3 +169,6 @@ defsha3(224)
 defsha3(256)
 defsha3(384)
 defsha3(512)
+  
+/*** pre-FIPS202 Keccak standard ***/
+defkeccak(256)
